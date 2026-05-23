@@ -283,6 +283,32 @@ footer a{color:var(--muted)}
     set: (k, v) => { try { localStorage.setItem(NS + ':' + k, JSON.stringify(v)); } catch {} }
   };
 
+  // ── L5 INTEROP — FallMesh BroadcastChannel (prime 89 · dyad Σ) ──
+  const mesh = (() => {
+    if (typeof BroadcastChannel === 'undefined') return { post: () => {}, on: () => {} };
+    const ch = new BroadcastChannel('fallmesh');
+    const handlers = [];
+    ch.onmessage = (e) => handlers.forEach(h => { try { h(e.data); } catch {} });
+    return {
+      post: (msg) => { try { ch.postMessage({ ...msg, from: 'forgeupgrade', prime: 89, t: Date.now() }); } catch {} },
+      on: (fn) => handlers.push(fn)
+    };
+  })();
+  // Announce presence
+  mesh.post({ type: 'node:online', name: 'Forge Upgrade', url: location.origin, layers: 7 });
+  // Respond to mesh pings + upgrade requests
+  mesh.on((m) => {
+    if (!m || m.from === 'forgeupgrade') return;
+    if (m.type === 'mesh:ping') {
+      mesh.post({ type: 'mesh:pong', name: 'Forge Upgrade', capabilities: ['html', 'zip', 'spec_md', 'url'] });
+    }
+    if (m.type === 'request:upgrade' && m.payload) {
+      // a sibling tool can hand us HTML/zip/spec and ask us to forge
+      window.__forgeMeshRequest = m;
+      console.log('%c◊·mesh', 'color:#10B981;font-weight:bold', 'upgrade request received from', m.from, m.payload);
+    }
+  });
+
   // Theme
   const themeBtn = document.getElementById('theme-btn');
   const initTheme = () => {
@@ -508,6 +534,17 @@ footer a{color:var(--muted)}
       const j = await callApi('/v1/upgrade', payload);
       setView('result');
       renderResult(j);
+      // Broadcast to the mesh — a new sovereign tool has entered the field
+      mesh.post({
+        type: 'tool:upgraded',
+        filename: j.filename,
+        size_kb: j.size_kb,
+        sovereignty_before: j.original_analysis?.sovereignty_score,
+        sovereignty_after: 10,
+        from_type: j.original_analysis?.input_info?.type || 'html',
+        input_mode: j.input_mode,
+        layers: Object.keys(j.layers_implemented || {}).filter(k => j.layers_implemented[k]).length
+      });
     } catch (err) {
       setView('status');
       setStatus('✕ ' + err.message, 'error');
