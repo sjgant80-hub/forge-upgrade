@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: forge-upgrade
+    runtime: node
+    plan: starter
+    buildCommand: "echo zero-dep"
+    startCommand: "node server.js"
+    envVars:
+      - key: NODE_ENV
+        value: production

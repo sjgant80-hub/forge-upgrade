@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Upload any HTML. Get it back sovereign. The torus that eats the old web.">
+<title>FORGE UPGRADE · upload dependent · download sovereign</title>
+<!-- ◊·κ=1 · single-file client · works from file:// · zero CDN -->
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FAFBFC;--surface:#FFFFFF;--surface-2:#F3F4F6;--surface-3:#E5E7EB;
+  --ink:#1F2937;--ink-2:#4B5563;--muted:#9CA3AF;
+  --primary:#10B981;--primary-dark:#059669;--primary-light:#D1FAE5;
+  --accent:#3B82F6;--accent-light:#DBEAFE;
+  --amber:#F59E0B;--amber-light:#FEF3C7;
+  --red:#EF4444;--red-light:#FEE2E2;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg:0 8px 24px rgba(0,0,0,0.1);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --max-w:900px;
+}
+[data-theme="dark"]{
+  --bg:#0B1220;--surface:#111827;--surface-2:#1F2937;--surface-3:#374151;
+  --ink:#F9FAFB;--ink-2:#D1D5DB;--muted:#6B7280;
+  --primary-light:#064E3B;--accent-light:#1E3A5F;--amber-light:#78350F;--red-light:#7F1D1D;
+  --shadow:0 1px 3px rgba(0,0,0,0.3);--shadow-lg:0 8px 24px rgba(0,0,0,0.45);
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+h1{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:800;line-height:1.15;letter-spacing:-0.02em}
+h2{font-size:clamp(1.2rem,3vw,1.5rem);font-weight:700;line-height:1.3;letter-spacing:-0.01em}
+h3{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-2);margin-bottom:8px}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre,.mono{font-family:var(--mono);font-size:13px}
+
+header{background:var(--surface);border-bottom:1px solid var(--surface-3);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:34px;height:34px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:18px}
+.brand-text{font-weight:800;font-size:17px;letter-spacing:-0.01em}
+.brand-text span{color:var(--primary)}
+.brand-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--primary-light);color:var(--primary-dark);font-weight:600;letter-spacing:0.06em}
+.header-controls{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--surface-3);background:var(--surface);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.15s}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--primary)}
+
+main{flex:1;padding:24px 20px 80px;max-width:var(--max-w);margin:0 auto;width:100%}
+.hero{text-align:center;padding:32px 0 40px}
+.hero p{color:var(--ink-2);font-size:17px;max-width:560px;margin:12px auto 0}
+.tagline{color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:0.08em;margin-top:12px}
+
+.card{background:var(--surface);border:1px solid var(--surface-3);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+
+.drop-zone{border:2px dashed var(--surface-3);border-radius:var(--radius-lg);padding:48px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--primary);background:var(--primary-light)}
+.drop-zone .glyph{font-size:48px;line-height:1;margin-bottom:12px;color:var(--primary)}
+.drop-zone .hint{color:var(--muted);font-size:14px;margin-top:8px}
+.drop-zone input[type="file"]{display:none}
+
+.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--surface-3)}
+.tab{padding:10px 16px;background:transparent;border:none;color:var(--ink-2);cursor:pointer;font:600 14px var(--font);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:var(--radius);border:none;cursor:pointer;font:600 15px var(--font);transition:all 0.18s;letter-spacing:0.01em;min-height:44px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover:not(:disabled){background:var(--primary-dark);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn-secondary{background:var(--surface-2);color:var(--ink);border:1px solid var(--surface-3)}
+.btn-secondary:hover:not(:disabled){background:var(--surface-3)}
+.btn-block{width:100%}
+.btn-lg{padding:16px 28px;font-size:16px}
+
+textarea,input[type="text"],input[type="url"],input[type="password"],select{width:100%;padding:12px 14px;border:1px solid var(--surface-3);border-radius:var(--radius);background:var(--surface);color:var(--ink);font:14px var(--mono);transition:border-color 0.15s}
+textarea{min-height:200px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.5}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:6px;font-weight:500}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:14px}
+
+.status{padding:14px 16px;border-radius:var(--radius);font-size:14px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.status-info{background:var(--accent-light);color:var(--accent)}
+.status-success{background:var(--primary-light);color:var(--primary-dark)}
+.status-warn{background:var(--amber-light);color:var(--amber)}
+.status-error{background:var(--red-light);color:var(--red)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.score{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface-2);border-radius:var(--radius);margin-bottom:10px}
+.score-num{font:800 28px var(--font);min-width:48px;text-align:center}
+.score-bar{flex:1;height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden}
+.score-fill{height:100%;background:var(--primary);transition:width 0.4s ease}
+.score-fill.low{background:var(--red)}
+.score-fill.mid{background:var(--amber)}
+.score-label{font-size:13px;color:var(--ink-2)}
+
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:var(--surface-2);color:var(--ink-2);margin:2px 4px 2px 0}
+.pill-primary{background:var(--primary-light);color:var(--primary-dark)}
+.pill-warn{background:var(--amber-light);color:var(--amber)}
+
+.list{list-style:none;padding:0;margin:0}
+.list li{padding:8px 0;border-bottom:1px solid var(--surface-3);font-size:14px}
+.list li:last-child{border-bottom:none}
+.list .glyph{color:var(--primary);font-weight:700;margin-right:8px}
+
+.section{margin-top:24px}
+.section-title{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.section-title h3{margin-bottom:0}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .glyph{font-size:40px;line-height:1;color:var(--surface-3);display:block;margin-bottom:10px}
+
+details{margin:10px 0}
+summary{cursor:pointer;font-weight:600;color:var(--ink-2);padding:8px 0}
+summary:hover{color:var(--primary)}
+
+footer{padding:24px 20px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--surface-3);margin-top:auto}
+footer a{color:var(--muted)}
+
+@media(max-width:600px){
+  .row{grid-template-columns:1fr}
+  main{padding:20px 16px 60px}
+  .card{padding:20px 16px}
+  .drop-zone{padding:32px 16px}
+}
+</style>
+</head>
+<body data-forge-lifecycle="empty">
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">◊</div>
+    <div>
+      <div class="brand-text">FORGE <span>UPGRADE</span></div>
+    </div>
+    <span class="brand-badge">SOVEREIGN</span>
+  </div>
+  <div class="header-controls">
+    <button class="icon-btn" id="theme-btn" title="Toggle theme">🌓</button>
+    <button class="icon-btn" id="settings-btn" title="Settings">⚙</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Upload any HTML.<br>Get it back sovereign.</h1>
+    <p>The torus that eats the old web. Strip the frameworks. Inject the seven layers. Open it from a USB stick — no server, no CDN, no leak.</p>
+    <div class="tagline">◊·κ=1 · upload dependent · download sovereign</div>
+  </section>
+
+  <!-- VIEW: input -->
+  <section id="view-input" class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="file">FILE</button>
+      <button class="tab" data-tab="paste">PASTE</button>
+      <button class="tab" data-tab="url">URL</button>
+    </div>
+
+    <div id="tab-file" class="tab-pane">
+      <label for="file-input" class="drop-zone" id="drop-zone">
+        <div class="glyph">⬆</div>
+        <div><strong>Drop an HTML file</strong> or click to browse</div>
+        <div class="hint">Anything with a <code>.html</code> · max 5 MB · stays on your device until you press Forge</div>
+        <input type="file" id="file-input" accept=".html,.htm,text/html">
+      </label>
+      <div id="file-info" class="status status-info" style="display:none"></div>
+    </div>
+
+    <div id="tab-paste" class="tab-pane" style="display:none">
+      <label for="paste-input">Paste raw HTML</label>
+      <textarea id="paste-input" placeholder="&lt;!DOCTYPE html&gt;&lt;html&gt;..."></textarea>
+    </div>
+
+    <div id="tab-url" class="tab-pane" style="display:none">
+      <label for="url-input">Public URL</label>
+      <input type="url" id="url-input" placeholder="https://your-tool.com">
+      <div class="hint" style="margin-top:6px;color:var(--muted);font-size:13px">The forge fetches once · no proxy stored · the API must be running with internet access</div>
+    </div>
+
+    <details>
+      <summary>Options · brand · agents · API endpoint</summary>
+      <div style="padding-top:12px">
+        <div class="row">
+          <div class="field">
+            <label for="opt-title">Tool name</label>
+            <input type="text" id="opt-title" placeholder="auto-detected">
+          </div>
+          <div class="field">
+            <label for="opt-primary">Primary colour</label>
+            <input type="text" id="opt-primary" placeholder="#10B981">
+          </div>
+        </div>
+        <div class="field">
+          <label for="api-endpoint">Forge API endpoint</label>
+          <input type="url" id="api-endpoint" placeholder="https://your-forge.example.com">
+          <div class="hint" style="margin-top:6px;color:var(--muted);font-size:12px">Where to POST · saved locally · defaults to current origin when served from the API</div>
+        </div>
+      </div>
+    </details>
+
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-secondary" id="analyse-btn">Analyse only</button>
+      <button class="btn btn-primary btn-block btn-lg" id="forge-btn">Forge sovereign →</button>
+    </div>
+  </section>
+
+  <!-- VIEW: status -->
+  <section id="view-status" style="display:none">
+    <div class="card">
+      <div id="status-line" class="status status-info">
+        <span class="spinner"></span>
+        <span id="status-text">Working...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW: result -->
+  <section id="view-result" style="display:none">
+    <div class="card">
+      <h2 id="result-title" style="margin-bottom:6px">Upgrade complete</h2>
+      <p id="result-summary" style="color:var(--ink-2);font-size:14px;margin-bottom:18px"></p>
+
+      <div class="section">
+        <div class="section-title"><h3>Sovereignty</h3></div>
+        <div class="score">
+          <div class="score-num" id="sov-before">—</div>
+          <div class="score-bar"><div class="score-fill" id="sov-before-bar" style="width:0%"></div></div>
+          <div class="score-label">before</div>
+        </div>
+        <div class="score">
+          <div class="score-num" id="sov-after">10</div>
+          <div class="score-bar"><div class="score-fill" style="width:100%"></div></div>
+          <div class="score-label">after</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><h3>Detected</h3></div>
+        <div id="detected-pills"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><h3>Layers implemented</h3></div>
+        <div id="layers-pills"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><h3>Changes made</h3></div>
+        <ul class="list" id="changes-list"></ul>
+      </div>
+
+      <div class="section" id="limitations-section" style="display:none">
+        <div class="section-title"><h3 style="color:var(--amber)">Limitations</h3></div>
+        <ul class="list" id="limitations-list"></ul>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" id="download-btn">↓ Download sovereign HTML</button>
+        <button class="btn btn-secondary" id="restart-btn">Forge another</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  ◊·κ=1 · forge-upgrade · <a href="https://github.com/sjgant80-hub/forge-upgrade">GitHub</a> · <span class="mono">v18 protocol</span>
+</footer>
+
+<script>
+// ◊·κ=1 — sovereign client — no external deps
+(function(){
+  const NS = 'forge-upgrade';
+  const ls = {
+    get: (k) => { try { const v = localStorage.getItem(NS + ':' + k); return v ? JSON.parse(v) : null; } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(NS + ':' + k, JSON.stringify(v)); } catch {} }
+  };
+
+  // Theme
+  const themeBtn = document.getElementById('theme-btn');
+  const initTheme = () => {
+    const saved = ls.get('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    else if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+  };
+  themeBtn.onclick = () => {
+    const cur = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = cur === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    ls.set('theme', next);
+  };
+
+  // API endpoint — prefer saved, else current origin (when served from the API), else placeholder
+  const apiInput = document.getElementById('api-endpoint');
+  const defaultApi = location.protocol === 'file:' ? 'http://localhost:3000' : location.origin;
+  apiInput.value = ls.get('api') || defaultApi;
+  apiInput.onchange = () => ls.set('api', apiInput.value.trim());
+
+  // Tabs
+  let currentTab = 'file';
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      currentTab = t.dataset.tab;
+      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+      document.querySelectorAll('.tab-pane').forEach(p => p.style.display = p.id === 'tab-' + currentTab ? '' : 'none');
+    };
+  });
+
+  // File input
+  const fileInput = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const fileInfo = document.getElementById('file-info');
+  let loadedHtml = null;
+  let loadedName = null;
+
+  const loadFile = (file) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      fileInfo.textContent = '✕ File too large (>5MB).';
+      fileInfo.className = 'status status-error';
+      fileInfo.style.display = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      loadedHtml = e.target.result;
+      loadedName = file.name;
+      fileInfo.textContent = '✓ Loaded ' + file.name + ' · ' + Math.round(file.size / 1024) + ' KB';
+      fileInfo.className = 'status status-success';
+      fileInfo.style.display = '';
+    };
+    reader.readAsText(file);
+  };
+
+  fileInput.onchange = (e) => loadFile(e.target.files[0]);
+  ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }));
+  dropZone.addEventListener('drop', (e) => loadFile(e.dataTransfer.files[0]));
+
+  // Forge
+  const setView = (id) => {
+    ['input', 'status', 'result'].forEach(v => {
+      document.getElementById('view-' + v).style.display = v === id ? '' : 'none';
+    });
+    document.body.setAttribute('data-forge-lifecycle', { input: 'input', status: 'working', result: 'complete' }[id] || 'empty');
+  };
+
+  const setStatus = (text, kind) => {
+    const el = document.getElementById('status-line');
+    const txt = document.getElementById('status-text');
+    txt.textContent = text;
+    el.className = 'status status-' + (kind || 'info');
+    const spinner = el.querySelector('.spinner');
+    if (spinner) spinner.style.display = kind === 'success' || kind === 'error' ? 'none' : '';
+  };
+
+  const buildPayload = () => {
+    const opts = {};
+    const title = document.getElementById('opt-title').value.trim();
+    const primary = document.getElementById('opt-primary').value.trim();
+    if (title) opts.brand = { ...(opts.brand || {}), logo_text: title };
+    if (primary) opts.brand = { ...(opts.brand || {}), primary_color: primary };
+
+    if (currentTab === 'file') {
+      if (!loadedHtml) throw new Error('No file loaded');
+      return { html: loadedHtml, options: opts };
+    }
+    if (currentTab === 'paste') {
+      const raw = document.getElementById('paste-input').value;
+      if (!raw.trim()) throw new Error('Paste some HTML first');
+      return { html: raw, options: opts };
+    }
+    if (currentTab === 'url') {
+      const url = document.getElementById('url-input').value.trim();
+      if (!url) throw new Error('Enter a URL');
+      return { url, options: opts };
+    }
+  };
+
+  const callApi = async (path, payload) => {
+    const api = (apiInput.value || '').replace(/\/+$/, '');
+    if (!api) throw new Error('API endpoint not set (open Options)');
+    const r = await fetch(api + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
+      throw new Error(j.error || ('HTTP ' + r.status));
+    }
+    return r.json();
+  };
+
+  const renderResult = (j) => {
+    document.getElementById('result-title').textContent = j.filename || 'Upgrade complete';
+    const a = j.original_analysis || {};
+    document.getElementById('result-summary').textContent = (a.detected_purpose || 'tool').replace(/_/g, ' ') + ' · ' + (j.size_kb || 0) + ' KB · ' + (j.time_seconds || 0) + 's · ' + (Object.keys(j.layers_implemented || {}).filter(k => j.layers_implemented[k]).length) + '/7 layers';
+
+    const sovBefore = a.sovereignty_score ?? 0;
+    document.getElementById('sov-before').textContent = sovBefore;
+    const bar = document.getElementById('sov-before-bar');
+    bar.style.width = (sovBefore * 10) + '%';
+    bar.classList.remove('low', 'mid');
+    if (sovBefore < 4) bar.classList.add('low');
+    else if (sovBefore < 7) bar.classList.add('mid');
+
+    const dp = document.getElementById('detected-pills');
+    dp.innerHTML = '';
+    (a.detected_frameworks || []).forEach(f => {
+      const span = document.createElement('span'); span.className = 'pill pill-warn'; span.textContent = f.name + (f.version ? ' ' + f.version : '');
+      dp.appendChild(span);
+    });
+    (a.detected_features || []).forEach(f => {
+      const span = document.createElement('span'); span.className = 'pill'; span.textContent = f.replace(/_/g, ' ');
+      dp.appendChild(span);
+    });
+    if (!dp.children.length) dp.innerHTML = '<span class="pill">no notable patterns</span>';
+
+    const lp = document.getElementById('layers-pills');
+    lp.innerHTML = '';
+    Object.entries(j.layers_implemented || {}).forEach(([k, v]) => {
+      const span = document.createElement('span'); span.className = 'pill pill-primary'; span.textContent = (v ? '✓ ' : '✗ ') + k.toUpperCase();
+      lp.appendChild(span);
+    });
+
+    const cl = document.getElementById('changes-list');
+    cl.innerHTML = '';
+    (j.changes_made || []).forEach(c => {
+      const li = document.createElement('li'); li.innerHTML = '<span class="glyph">▸</span>' + c;
+      cl.appendChild(li);
+    });
+
+    const lims = a.limitations || [];
+    const lsec = document.getElementById('limitations-section');
+    const ll = document.getElementById('limitations-list');
+    ll.innerHTML = '';
+    if (lims.length) {
+      lsec.style.display = '';
+      lims.forEach(l => {
+        const li = document.createElement('li'); li.innerHTML = '<span class="glyph" style="color:var(--amber)">!</span>' + l.replace(/_/g, ' ');
+        ll.appendChild(li);
+      });
+    } else {
+      lsec.style.display = 'none';
+    }
+
+    // Download wiring
+    document.getElementById('download-btn').onclick = () => {
+      const blob = new Blob([atob(j.upgraded_file)], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = j.filename || 'sovereign.html';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+  };
+
+  document.getElementById('forge-btn').onclick = async () => {
+    try {
+      const payload = buildPayload();
+      setView('status');
+      setStatus('Analysing structure...', 'info');
+      const j = await callApi('/v1/upgrade', payload);
+      setView('result');
+      renderResult(j);
+    } catch (err) {
+      setView('status');
+      setStatus('✕ ' + err.message, 'error');
+    }
+  };
+
+  document.getElementById('analyse-btn').onclick = async () => {
+    try {
+      const payload = buildPayload();
+      setView('status');
+      setStatus('Reading the file...', 'info');
+      const j = await callApi('/v1/upgrade/analyse', payload);
+      setView('result');
+      // analyse-only response: no upgraded_file
+      const fakeJ = {
+        filename: 'analysis',
+        size_kb: j.original_analysis?.stats?.size_kb || 0,
+        time_seconds: (j.time_ms / 1000).toFixed(2),
+        original_analysis: j.original_analysis,
+        layers_implemented: {},
+        changes_made: j.original_analysis.upgrade_plan || []
+      };
+      renderResult(fakeJ);
+      document.getElementById('download-btn').style.display = 'none';
+    } catch (err) {
+      setView('status');
+      setStatus('✕ ' + err.message, 'error');
+    }
+  };
+
+  document.getElementById('restart-btn').onclick = () => {
+    setView('input');
+    document.getElementById('download-btn').style.display = '';
+  };
+
+  document.getElementById('settings-btn').onclick = () => {
+    document.querySelector('details').open = true;
+    document.getElementById('api-endpoint').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  initTheme();
+  console.log('%c◊·κ=1', 'color:#10B981;font-weight:bold;font-size:14px', 'forge-upgrade client ready');
+})();
+</script>
+</body>
+</html>

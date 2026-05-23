@@ -1,0 +1,182 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Forge Upgrade API",
+    "description": "Upload any HTML. Get it back sovereign. The torus that eats the old web.",
+    "version": "1.0.0",
+    "contact": { "name": "AI Native Solutions", "email": "simon@ai-nativesolutions.com" },
+    "license": { "name": "Konomi", "url": "https://github.com/sjgant80-hub/forge-upgrade/blob/main/LICENSE" }
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local" },
+    { "url": "https://forge-upgrade.example.com", "description": "Production" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Service health",
+        "responses": {
+          "200": {
+            "description": "Healthy",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          }
+        }
+      }
+    },
+    "/v1/upgrade": {
+      "post": {
+        "summary": "Run the full 5-stage upgrade pipeline",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpgradeRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Upgraded HTML returned as base64",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpgradeResponse" } } }
+          },
+          "400": { "description": "Bad request" },
+          "413": { "description": "Payload too large" },
+          "500": { "description": "Upgrade failed" }
+        }
+      }
+    },
+    "/v1/upgrade/analyse": {
+      "post": {
+        "summary": "Read-only analysis (stages 1-2 only)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpgradeRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis only",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnalyseResponse" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "healthy" },
+          "version": { "type": "string" },
+          "uptime": { "type": "number" },
+          "llm_providers": {
+            "type": "object",
+            "properties": {
+              "gemini":   { "type": "boolean" },
+              "openai":   { "type": "boolean" },
+              "anthropic": { "type": "boolean" },
+              "deterministic": { "type": "boolean" }
+            }
+          },
+          "stages": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "UpgradeRequest": {
+        "type": "object",
+        "properties": {
+          "html":        { "type": "string", "description": "Raw HTML source" },
+          "html_base64": { "type": "string", "description": "Base64-encoded HTML" },
+          "url":         { "type": "string", "format": "uri", "description": "Public URL to fetch" },
+          "options": {
+            "type": "object",
+            "properties": {
+              "brand": {
+                "type": "object",
+                "properties": {
+                  "primary_color": { "type": "string", "example": "#10B981" },
+                  "accent_color":  { "type": "string", "example": "#3B82F6" },
+                  "logo_text":     { "type": "string" },
+                  "font_heading":  { "type": "string" },
+                  "font_body":     { "type": "string" }
+                }
+              },
+              "agents": {
+                "type": "object",
+                "properties": {
+                  "list": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["alpha","beta","gamma","delta","epsilon","zeta","eta","theta"] }
+                  }
+                }
+              },
+              "cascade": {
+                "type": "object",
+                "properties": {
+                  "t3_providers": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["gemini","openai","groq","anthropic"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OriginalAnalysis": {
+        "type": "object",
+        "properties": {
+          "detected_purpose":      { "type": "string" },
+          "detected_title":        { "type": "string" },
+          "detected_features":     { "type": "array", "items": { "type": "string" } },
+          "suggested_agents":      { "type": "array", "items": { "type": "string" } },
+          "detected_frameworks":   { "type": "array", "items": { "type": "object" } },
+          "detected_dependencies": { "type": "array", "items": { "type": "object" } },
+          "detected_api_calls":    { "type": "array", "items": { "type": "string" } },
+          "detected_storage":      { "type": "array", "items": { "type": "string" } },
+          "limitations":           { "type": "array", "items": { "type": "string" } },
+          "complexity_score":      { "type": "integer", "minimum": 1, "maximum": 10 },
+          "sovereignty_score":     { "type": "integer", "minimum": 0, "maximum": 10 },
+          "upgrade_plan":          { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "UpgradeResponse": {
+        "type": "object",
+        "properties": {
+          "original_analysis":   { "$ref": "#/components/schemas/OriginalAnalysis" },
+          "upgraded_file":       { "type": "string", "description": "Base64-encoded sovereign HTML" },
+          "filename":            { "type": "string" },
+          "size_kb":             { "type": "number" },
+          "size_bytes":          { "type": "number" },
+          "changes_made":        { "type": "array", "items": { "type": "string" } },
+          "layers_implemented": {
+            "type": "object",
+            "properties": {
+              "face":    { "type": "boolean" },
+              "swarm":   { "type": "boolean" },
+              "cascade": { "type": "boolean" },
+              "bloom":   { "type": "boolean" },
+              "persist": { "type": "boolean" },
+              "skin":    { "type": "boolean" },
+              "ass":     { "type": "boolean" }
+            }
+          },
+          "licence": {
+            "type": "object",
+            "properties": {
+              "forge_id":       { "type": "string" },
+              "key":            { "type": "string", "nullable": true },
+              "trial_started":  { "type": "number" },
+              "trial_expires":  { "type": "number" },
+              "trial_days":     { "type": "number" }
+            }
+          },
+          "time_seconds":         { "type": "number" },
+          "download_instructions": { "type": "string" }
+        }
+      },
+      "AnalyseResponse": {
+        "type": "object",
+        "properties": {
+          "original_analysis": { "$ref": "#/components/schemas/OriginalAnalysis" },
+          "time_ms":           { "type": "number" }
+        }
+      }
+    }
+  }
+}

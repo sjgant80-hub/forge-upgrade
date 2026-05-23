@@ -1,0 +1,14 @@
+{
+  "name": "forge-upgrade",
+  "version": "1.0.0",
+  "description": "Upload any HTML. Get it back sovereign. The torus that eats the old web.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["forge", "sovereign", "html", "upgrade", "vanilla", "v18", "konomi"],
+  "author": "AI Native Solutions <simon@ai-nativesolutions.com>",
+  "license": "Konomi",
+  "engines": { "node": ">=18" }
+}
