@@ -153,16 +153,17 @@ footer a{color:var(--muted)}
   <section id="view-input" class="card">
     <div class="tabs">
       <button class="tab active" data-tab="file">FILE</button>
-      <button class="tab" data-tab="paste">PASTE</button>
+      <button class="tab" data-tab="paste">PASTE HTML</button>
+      <button class="tab" data-tab="spec">SPEC .md</button>
       <button class="tab" data-tab="url">URL</button>
     </div>
 
     <div id="tab-file" class="tab-pane">
       <label for="file-input" class="drop-zone" id="drop-zone">
         <div class="glyph">⬆</div>
-        <div><strong>Drop an HTML file</strong> or click to browse</div>
-        <div class="hint">Anything with a <code>.html</code> · max 5 MB · stays on your device until you press Forge</div>
-        <input type="file" id="file-input" accept=".html,.htm,text/html">
+        <div><strong>Drop a file</strong> or click to browse</div>
+        <div class="hint">HTML · ZIP (Replit, Lovable, Next.js, Vite, CRA) · .md spec · max 20 MB · stays on your device until you press Forge</div>
+        <input type="file" id="file-input" accept=".html,.htm,text/html,.zip,application/zip,.md,.markdown,text/markdown,.txt,text/plain">
       </label>
       <div id="file-info" class="status status-info" style="display:none"></div>
     </div>
@@ -170,6 +171,12 @@ footer a{color:var(--muted)}
     <div id="tab-paste" class="tab-pane" style="display:none">
       <label for="paste-input">Paste raw HTML</label>
       <textarea id="paste-input" placeholder="&lt;!DOCTYPE html&gt;&lt;html&gt;..."></textarea>
+    </div>
+
+    <div id="tab-spec" class="tab-pane" style="display:none">
+      <label for="spec-input">Paste a markdown spec</label>
+      <textarea id="spec-input" placeholder="# My Tool&#10;&#10;A short description of what it should do.&#10;&#10;## Features&#10;- input field for X&#10;- button that does Y&#10;- shows Z"></textarea>
+      <div class="hint" style="margin-top:6px;color:var(--muted);font-size:13px">The Forge generates a sovereign HTML implementation from your spec · LLM provider required server-side for real implementation</div>
     </div>
 
     <div id="tab-url" class="tab-pane" style="display:none">
@@ -306,30 +313,57 @@ footer a{color:var(--muted)}
     };
   });
 
-  // File input
+  // File input — accepts HTML, ZIP, .md
   const fileInput = document.getElementById('file-input');
   const dropZone = document.getElementById('drop-zone');
   const fileInfo = document.getElementById('file-info');
-  let loadedHtml = null;
+  let loadedContent = null;   // string (HTML/spec) or Uint8Array (ZIP)
+  let loadedKind = null;      // 'html' | 'spec' | 'zip'
   let loadedName = null;
+
+  const detectKind = (name, type) => {
+    const lower = (name || '').toLowerCase();
+    if (lower.endsWith('.zip') || type === 'application/zip') return 'zip';
+    if (lower.endsWith('.md') || lower.endsWith('.markdown') || type === 'text/markdown') return 'spec';
+    if (lower.endsWith('.txt') && !lower.endsWith('.html')) return 'spec';
+    return 'html';
+  };
+
+  const arrayBufferToBase64 = (buf) => {
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+  };
 
   const loadFile = (file) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      fileInfo.textContent = '✕ File too large (>5MB).';
+    if (file.size > 20 * 1024 * 1024) {
+      fileInfo.textContent = '✕ File too large (>20MB).';
       fileInfo.className = 'status status-error';
       fileInfo.style.display = '';
       return;
     }
+    const kind = detectKind(file.name, file.type);
+    loadedKind = kind;
+    loadedName = file.name;
     const reader = new FileReader();
     reader.onload = (e) => {
-      loadedHtml = e.target.result;
-      loadedName = file.name;
-      fileInfo.textContent = '✓ Loaded ' + file.name + ' · ' + Math.round(file.size / 1024) + ' KB';
+      if (kind === 'zip') {
+        loadedContent = arrayBufferToBase64(e.target.result);
+      } else {
+        loadedContent = e.target.result;
+      }
+      const label = kind === 'zip' ? 'ZIP archive' : kind === 'spec' ? 'spec .md' : 'HTML';
+      fileInfo.textContent = '✓ Loaded ' + file.name + ' · ' + Math.round(file.size / 1024) + ' KB · ' + label;
       fileInfo.className = 'status status-success';
       fileInfo.style.display = '';
     };
-    reader.readAsText(file);
+    if (kind === 'zip') reader.readAsArrayBuffer(file);
+    else reader.readAsText(file);
   };
 
   fileInput.onchange = (e) => loadFile(e.target.files[0]);
@@ -362,13 +396,20 @@ footer a{color:var(--muted)}
     if (primary) opts.brand = { ...(opts.brand || {}), primary_color: primary };
 
     if (currentTab === 'file') {
-      if (!loadedHtml) throw new Error('No file loaded');
-      return { html: loadedHtml, options: opts };
+      if (!loadedContent) throw new Error('No file loaded');
+      if (loadedKind === 'zip')  return { zip_base64: loadedContent, options: opts };
+      if (loadedKind === 'spec') return { spec_md: loadedContent, options: opts };
+      return { html: loadedContent, options: opts };
     }
     if (currentTab === 'paste') {
       const raw = document.getElementById('paste-input').value;
       if (!raw.trim()) throw new Error('Paste some HTML first');
       return { html: raw, options: opts };
+    }
+    if (currentTab === 'spec') {
+      const raw = document.getElementById('spec-input').value;
+      if (!raw.trim()) throw new Error('Paste a spec first');
+      return { spec_md: raw, options: opts };
     }
     if (currentTab === 'url') {
       const url = document.getElementById('url-input').value.trim();
@@ -395,7 +436,10 @@ footer a{color:var(--muted)}
   const renderResult = (j) => {
     document.getElementById('result-title').textContent = j.filename || 'Upgrade complete';
     const a = j.original_analysis || {};
-    document.getElementById('result-summary').textContent = (a.detected_purpose || 'tool').replace(/_/g, ' ') + ' · ' + (j.size_kb || 0) + ' KB · ' + (j.time_seconds || 0) + 's · ' + (Object.keys(j.layers_implemented || {}).filter(k => j.layers_implemented[k]).length) + '/7 layers';
+    const projectType = a.input_info?.type;
+    const inputMode = j.input_mode || a.input_mode;
+    const modeLabel = inputMode && inputMode !== 'html-direct' ? ' · from ' + (projectType || inputMode) : '';
+    document.getElementById('result-summary').textContent = (a.detected_purpose || 'tool').replace(/_/g, ' ') + modeLabel + ' · ' + (j.size_kb || 0) + ' KB · ' + (j.time_seconds || 0) + 's · ' + (Object.keys(j.layers_implemented || {}).filter(k => j.layers_implemented[k]).length) + '/7 layers';
 
     const sovBefore = a.sovereignty_score ?? 0;
     document.getElementById('sov-before').textContent = sovBefore;

@@ -1,12 +1,23 @@
 # ◊·κ=1 — FORGE UPGRADE
 
-**Upload any HTML. Get it back sovereign. The torus that eats the old web.**
+**Upload anything. Get it back sovereign. The torus that eats the old web.**
 
-A zero-dep Node API + sovereign drop-zone client that takes existing HTML tools — messy, server-dependent, framework-heavy — and rebuilds them as sovereign single-file applications with all seven v18 build layers.
+A zero-dep Node API + sovereign drop-zone client that takes:
+
+- **HTML files** — strip CDN, replace jQuery with vanilla, inject v18 layers
+- **ZIP archives** — Replit / Lovable / Next.js / Vite / CRA / Vue / Svelte exports → single sovereign HTML
+- **Markdown specs** — describe what you want, get a working tool back
+- **Public URLs** — point the Forge at any web app and pull it sovereign
+
+...and rebuilds them as sovereign single-file applications with all seven v18 build layers.
 
 ```
-Their tool goes in broken and dependent.
-It comes out sovereign and upgraded.
+Their failed Replit build goes in.
+Their Lovable export goes in.
+Their .md spec goes in.
+Their existing tool goes in.
+
+Sovereign HTML comes out. No hosting. No CDN. No leak.
 ```
 
 ## Quick start
@@ -41,12 +52,15 @@ The Forge processes the upload through 5 stages:
 ## Endpoints
 
 ### `POST /v1/upgrade` — full pipeline
-Body:
+Body — send **one** of these inputs:
 ```json
 {
   "html":         "<!DOCTYPE html>...",   // raw HTML, OR
-  "html_base64":  "PCFET0NUWVBFIGh0...",  // base64-encoded, OR
-  "url":          "https://example.com",  // fetch and upgrade
+  "html_base64":  "PCFET0NUWVBFIGh0...",  // base64 HTML, OR
+  "url":          "https://example.com",  // fetch and upgrade, OR
+  "zip_base64":   "UEsDBBQA...",          // base64 ZIP (Replit/Lovable/Next/Vite), OR
+  "files":        { "src/App.tsx": "..." }, // pre-extracted file dict, OR
+  "spec_md":      "# My Tool\n...",       // markdown spec → build from spec
   "options": {
     "brand": {
       "primary_color": "#10B981",
@@ -58,6 +72,16 @@ Body:
   }
 }
 ```
+
+**Input modes** the response tells you what it did:
+
+| `input_mode` | What |
+|---|---|
+| `html-direct` | Single HTML passed through |
+| `zip-static` | ZIP contained a static HTML — that gets upgraded |
+| `project-llm` | ZIP was a React/Next/Vue project — LLM translated to sovereign HTML |
+| `project-scaffold` | Project bundle, no LLM available — structural scaffold with source preserved |
+| `spec-build` | Built from a .md spec (LLM if available, else scaffold with spec embedded) |
 
 Response:
 ```json
